@@ -43,12 +43,19 @@ def message_decoder(msgid):
     m = str(m).lstrip()
 
     ''' Compare to XML '''
-    xml_source = './Includes/common_messages.xml'
+    common_xml_source = './Includes/common_messages.xml'
+    ardupilotmega_xml_source = './Includes/ardupilotmega.xml'
     # print("Grabbing XML: " + xml_source)
-    common = minidom.parse(xml_source).getElementsByTagName('message')
+    common = minidom.parse(common_xml_source).getElementsByTagName('message')
+    ardupilotmega = minidom.parse(ardupilotmega_xml_source).getElementsByTagName('message')
     for c in common:
         if c.attributes['id'].value == m:
             return c.attributes['name'].value
+    for a in ardupilotmega:
+        if a.attributes['id'].value == m:
+            # print("found m as {} ".format(m))
+            return a.attributes['name'].value
+
 
 # print(message_decoder('00 00 00'))
 
