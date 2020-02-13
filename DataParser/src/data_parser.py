@@ -6,6 +6,7 @@ By: M5DS1
         This payload data is then parsed using the MAVLINK 2.0 Serialization
         Outputs to Excel (.xlsx) Sheet in Results/ directory
 """
+# Note: ignore the squiggly lines if using pycharm
 
 import json
 import pandas as pd
@@ -13,13 +14,9 @@ import numpy as np
 import warnings
 warnings.filterwarnings("ignore")
 
-""" For Pycharm """
-from plot_utils import *
-from stat_utils import *
 
-""" For Anaconda Prompt """
-# from src.plot_utils import *
-# from src.stat_utils import *
+from src.plot_utils import *
+from src.stat_utils import *
 
 
 def data_parser(json_directory, json_filename):

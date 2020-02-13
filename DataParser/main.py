@@ -6,7 +6,7 @@ By: M5DS1
 """
 
 import os
-from data_parser import *
+from src.data_parser import *
 
 
 ''' Only Change This!! '''
