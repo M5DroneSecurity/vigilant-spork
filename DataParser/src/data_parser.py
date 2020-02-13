@@ -30,17 +30,10 @@ def data_parser(json_directory, json_filename):
     payload_len = []
     data_len = []
     data_data = []
-    count = 0
+    v09_count = 0
+    v1_count = 0
+    v2_count = 0
     dead = 0
-
-    ''' MAVLINK 1.0 Parser '''
-    old_count = 0
-    old_ip_src = []
-    old_ip_dst = []
-    old_frame_reltime = []
-    old_payload_len = []
-    old_data_len = []
-    old_data_data = []
 
     ''' Load JSON file '''
     print("Grabbing JSON: ", json_location)
@@ -51,27 +44,37 @@ def data_parser(json_directory, json_filename):
         for packet in src_loader:
             try:
                 packet_array = packet['_source']['layers']['data']['data.data'].split(':')
-                ''' Filter for MavLink 2.0 '''
-                if packet_array[0] == 'fe':
+                ''' Filter for MavLink (1.0/2.0) '''
+                if packet_array[0] in ['fe','fd']:
+                    # if packet_array[0] == '55':
+                    #     v09_count += 1
+                    if packet_array[0] == 'fe':
+                        v1_count += 1
+                        payload_len.append(int(packet['_source']['layers']['data']['data.len']) - 8)
+                    elif packet_array[0] == 'fd':
+                        v2_count += 1
+                        payload_len.append(int(packet['_source']['layers']['data']['data.len']) - 12)
+
                     ''' Relevant fields '''
                     ip_src.append(packet['_source']['layers']['ip']['ip.src'])
                     ip_dst.append(packet['_source']['layers']['ip']['ip.dst'])
                     frame_reltime.append(packet['_source']['layers']['frame']['frame.time_relative'])
-                    payload_len.append(int(packet['_source']['layers']['data']['data.len']) - 12)
                     data_len.append(packet['_source']['layers']['data']['data.len'])
                     data_data.append(packet['_source']['layers']['data']['data.data'])
-                    count += 1
-                # elif packet_array[0] == 'fe':
-                #     old_count += 1
+
+
+
                 else:
                     dead += 1
             except KeyError:
                 # print("Failed to append Data, KeyError. Packet " + str(count))
-                count += 1
                 dead += 1
+
+        ''' Output Count Statistics to Console '''
         print("Non-MavLink Packets: ", dead)
-        print("Mavlink 2.0 Packets: ", count)
-        print("Mavlink 1.0 Packets: ", old_count)
+        print("Mavlink 2.0 Packets: ", v2_count)
+        print("Mavlink 1.0 Packets: ", v1_count)
+        # print("Mavlink 0.9 Packets: ", v09_count)
         # for n in range(len(src_loader)):
         #     print("DEBUG src_loader:  {}\t{}".format(data_len[n], data_data[n]))
 
@@ -82,11 +85,13 @@ def data_parser(json_directory, json_filename):
         # print(split_data[dat])
 
     # print("DEBUG: Length of split_data is {}".format(split_data))
-    print("MavLink Packets: {}".format(len(data_data)))
+    print("Total MavLink Packets: {}".format(len(data_data)))
 
 
     '''
-    First, lets split these data into MavLink fields.. [0][1][2][3][4][5][6][7:10][10:-3][-3:]
+    First, lets split these data into MavLink fields.. 
+    v1.0 uses [0][1][2][3][4][5][6:-2][-2:]
+    v2.0 uses [0][1][2][3][4][5][6][7:10][10:-3][-2:]
     
     Serialization format: https://mavlink.io/en/guide/serialization.html
     '''
@@ -105,19 +110,32 @@ def data_parser(json_directory, json_filename):
 
     ''' Store data in these field arrays '''
     for n in range(len(data_data)):
+        # print(data_data[n])
         magic.append(split_data[n][0])
         length.append(split_data[n][1])
-        incompat_flags.append(split_data[n][2])
-        compat_flags.append(split_data[n][3])
-        seq.append(split_data[n][4])
-        sysid.append(split_data[n][5])
-        compid.append(split_data[n][6])
-        msgid.append(' '.join(split_data[n][7:10]))
-        payload.append(' '.join(split_data[n][10:-2]))
-        checksum.append(' '.join(split_data[n][-2:]))
+        if split_data[n][0] == 'fe':
+            incompat_flags.append("--")
+            compat_flags.append("--")
+            seq.append(split_data[n][2])
+            sysid.append(split_data[n][3])
+            compid.append(split_data[n][4])
+            msgid.append(split_data[n][5])
+            payload.append(' '.join(split_data[n][6:-2]))
+            checksum.append(' '.join(split_data[n][-2:]))
+        if split_data[n][0] == 'fd':
+            incompat_flags.append(split_data[n][2])
+            compat_flags.append(split_data[n][3])
+            seq.append(split_data[n][4])
+            sysid.append(split_data[n][5])
+            compid.append(split_data[n][6])
+            msgid.append(' '.join(split_data[n][7:10]))
+            payload.append(' '.join(split_data[n][10:-2]))
+            checksum.append(' '.join(split_data[n][-2:]))
 
-    clean = pd.DataFrame(np.column_stack([magic, length, incompat_flags, compat_flags, seq, sysid, compid, msgid, payload,
-                                          checksum, payload_len, ip_src, ip_dst, frame_reltime]),
+    # print("{} {} {} {} {} {} {} {} {} {}".format(len(magic),len(length),len(incompat_flags),len(compat_flags),len(seq),len(sysid),len(compid),len(msgid),len(payload),len(checksum)))
+
+    clean = pd.DataFrame(np.column_stack([magic, length, incompat_flags, compat_flags, seq, sysid, compid, msgid,
+                                          payload, checksum, payload_len, ip_src, ip_dst, frame_reltime]),
                          columns=['magic [0]', 'length [1]', 'incompat_flags [2]', 'compat_flags [3]', 'seq [4]',
                                   'sysid [5]', 'compid [6]', 'msgid [7:10]', 'payload [10:-2]', 'checksum [-2:]',
                                   'PAYLOAD_LENGTH', 'IP_SRC', 'IP_DST', 'FRAME_RELTIME'])
@@ -163,7 +181,7 @@ def data_parser(json_directory, json_filename):
         stat_tabler(writer, 'msgID-00 00 00', hb, '00 00 00')
 
         ''' Top 4 Msg_IDS '''
-        for msg in list(msg_ids['Msg_ID'])[0:4]:
+        for msg in list(msg_ids['Msg_ID'])[0:6]:
             data = clean.loc[clean['msgid [7:10]'] == msg]
             data['TIME_DELTA'] = data['FRAME_RELTIME'] - data['FRAME_RELTIME'].shift(1)
             data.to_excel(writer, sheet_name='msgID-'+msg)
