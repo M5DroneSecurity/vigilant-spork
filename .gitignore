@@ -1,3 +1,7 @@
 *.idea
 __pycache__/
 *.py[cod]
+*.cpython-37.pyc
+*.pyc
+venv/*
+venv*

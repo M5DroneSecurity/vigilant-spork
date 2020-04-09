@@ -12,7 +12,8 @@ from src.data_parser import *
 ''' Only Change This!! '''
 # json_dir = 'Decrypted/Intel/'
 # json_dir = 'Decrypted/Viper/'
-json_dir = 'Decrypted/Solo/'
+# json_dir = 'Decrypted/Solo/solo_decrypted_json_20200217/'
+json_dir = 'Decrypted/Solo/solo_decrypted_json_20200223/'
 
 for json_file in os.listdir(json_dir):
     if json_file.endswith(".json"):

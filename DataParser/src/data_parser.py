@@ -46,8 +46,8 @@ def data_parser(json_directory, json_filename):
                 packet_array = packet['_source']['layers']['data']['data.data'].split(':')
                 ''' Filter for MavLink (1.0/2.0) '''
                 if packet_array[0] in ['fe','fd']:
-                    # if packet_array[0] == '55':
-                    #     v09_count += 1
+                    if packet_array[0] == '55':
+                        v09_count += 1
                     if packet_array[0] == 'fe':
                         v1_count += 1
                         payload_len.append(int(packet['_source']['layers']['data']['data.len']) - 8)
@@ -74,7 +74,7 @@ def data_parser(json_directory, json_filename):
         print("Non-MavLink Packets: ", dead)
         print("Mavlink 2.0 Packets: ", v2_count)
         print("Mavlink 1.0 Packets: ", v1_count)
-        # print("Mavlink 0.9 Packets: ", v09_count)
+        print("Mavlink 0.9 Packets: ", v09_count)
         # for n in range(len(src_loader)):
         #     print("DEBUG src_loader:  {}\t{}".format(data_len[n], data_data[n]))
 
@@ -190,4 +190,5 @@ def data_parser(json_directory, json_filename):
             # density_grapher(writer,'msgID-'+msg, data, msg)
             stat_tabler(writer, 'msgID-'+msg, data, msg)
 
-    print("Finished!! Outputted to:  " + 'Results/' + json_filename + '.xlsx \n')
+    print("Finished!! Outputted to:  " + 'Results/' + json_filename + '.xlsx')
+    print('\n')
