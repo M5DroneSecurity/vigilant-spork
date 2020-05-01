@@ -44,7 +44,7 @@ def occur_grapher(writer_, sheet_, data_):
     occur_chart.set_legend({'none': True})
 
     ## Insert chart into worksheet
-    worksheet.insert_chart('E2', occur_chart)
+    worksheet.insert_chart('B34', occur_chart)
 
 
 '''
